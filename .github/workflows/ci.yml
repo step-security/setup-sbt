@@ -25,7 +25,6 @@ jobs:
         with:
           distribution: ${{ matrix.distribution }}
           java-version: ${{ matrix.java }}
-          cache: sbt
       - uses: ./
       - name: Build and test
         shell: bash
