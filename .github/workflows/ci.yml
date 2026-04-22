@@ -8,22 +8,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        os: ${{ github.actor == 'dependabot[bot]' && fromJson('["ubuntu-22.04", "ubuntu-24.04"]') || fromJson('["ubuntu-22.04", "ubuntu-24.04", "macos-14", "windows-2022"]') }}
+        java: [8]
+        distribution: [zulu]
         include:
           - os: ubuntu-22.04
             java: 17
             distribution: temurin
-          - os: ubuntu-24.04
-            java: 8
-            distribution: zulu
-          - os: macos-14
-            java: 8
-            distribution: zulu
-          - os: windows-2022
-            java: 8
-            distribution: zulu
-        exclude:
-          - os: ${{ github.actor == 'dependabot[bot]' && 'macos-14' || 'none' }}
-          - os: ${{ github.actor == 'dependabot[bot]' && 'windows-2022' || 'none' }}
     runs-on: ${{ matrix.os }}
     env:
       JAVA_OPTS: -Xms2048M -Xmx2048M -Xss6M -XX:ReservedCodeCacheSize=256M -Dfile.encoding=UTF-8
