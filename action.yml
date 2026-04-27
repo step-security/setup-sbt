@@ -110,7 +110,7 @@ runs:
       env:
         SBT_RUNNER_VERSION: ${{ inputs.sbt-runner-version }}
         SBT_DOWNLOADPATH: "${{ steps.cache-paths.outputs.sbt_downloadpath }}"
-      uses: carabiner-dev/actions/ampel/verify@360ffa1eb909b0105d4eccb6d6ef337911c34952 # v1.1.6
+      uses: step-security/carabiner-dev-actions/ampel/verify@v1
       with:
         policy: "git+https://github.com/carabiner-dev/policies#signature/signature.json"
         subject: "$SBT_DOWNLOADPATH/sbt-$SBT_RUNNER_VERSION.zip"
