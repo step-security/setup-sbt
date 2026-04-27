@@ -1,0 +1,32 @@
+name: CI
+on:
+  pull_request:
+  push:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ github.actor == 'dependabot[bot]' && fromJson('["ubuntu-22.04", "ubuntu-24.04"]') || fromJson('["ubuntu-22.04", "ubuntu-24.04", "macos-14", "windows-2022"]') }}
+        java: [8]
+        distribution: [zulu]
+        include:
+          - os: ubuntu-22.04
+            java: 17
+            distribution: temurin
+    runs-on: ${{ matrix.os }}
+    env:
+      JAVA_OPTS: -Xms2048M -Xmx2048M -Xss6M -XX:ReservedCodeCacheSize=256M -Dfile.encoding=UTF-8
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: ${{ matrix.distribution }}
+          java-version: ${{ matrix.java }}
+          cache: sbt
+      - uses: ./
+      - name: Build and test
+        shell: bash
+        run: sbt -v +test
