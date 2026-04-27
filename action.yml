@@ -113,8 +113,8 @@ runs:
       uses: step-security/carabiner-dev-actions/ampel/verify@v1
       with:
         policy: "git+https://github.com/carabiner-dev/policies#signature/signature.json"
-        subject: "$SBT_DOWNLOADPATH/sbt-$SBT_RUNNER_VERSION.zip"
-        collector: "fs:$SBT_DOWNLOADPATH/" # Collect signatures from download path
+        subject: "${{ steps.cache-paths.outputs.sbt_downloadpath }}/sbt-${{ inputs.sbt-runner-version }}.zip"
+        collector: "fs:${{ steps.cache-paths.outputs.sbt_downloadpath }}/" # Collect signatures from download path
         signer: "key::rsassa-pkcs1v15::2EE0EA64E40A89B84B2DF73499E82A75642AC823"
         fail: false # Monitor only, don't fail the workflow yet.
         attest: false
