@@ -8,13 +8,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ github.actor == 'dependabot[bot]' && fromJson('["ubuntu-22.04", "ubuntu-24.04"]') || fromJson('["ubuntu-22.04", "ubuntu-24.04", "macos-14", "windows-2022"]') }}
-        java: [8]
-        distribution: [zulu]
         include:
           - os: ubuntu-22.04
             java: 17
             distribution: temurin
+          - os: macos-14
+            java: 17
+            distribution: zulu
+          - os: windows-2022
+            java: 17
+            distribution: temurin
+    if: github.actor != 'dependabot[bot]' || matrix.os == 'ubuntu-22.04'
     runs-on: ${{ matrix.os }}
     env:
       JAVA_OPTS: -Xms2048M -Xmx2048M -Xss6M -XX:ReservedCodeCacheSize=256M -Dfile.encoding=UTF-8
@@ -32,6 +36,13 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: sbt
       - uses: ./
-      - name: Build and test
+      - name: Build and test root
         shell: bash
         run: sbt -v +test
+      - name: Build and test sbt 2
+        shell: bash
+        run: |
+          pushd example
+          sbt -v test
+          sbt -v test
+          popd

@@ -5,6 +5,10 @@ inputs:
     description: "The runner version (The actual version is controlled via project/build.properties)"
     required: true
     default: 1.12.11
+  disk-cache:
+    description: "Enable sbt 2.x disk cache"
+    required: false
+    default: true
 runs:
   using: "composite"
   steps:
@@ -62,11 +66,18 @@ runs:
         if [[ "$RUNNER_OS" == "Windows" ]]; then
           echo "sbt_toolpath=$RUNNER_TOOL_CACHE\\sbt\\$SBT_RUNNER_VERSION" >> "$GITHUB_OUTPUT"
           echo "sbt_downloadpath=$RUNNER_TEMP\\_sbt" >> "$GITHUB_OUTPUT"
+          echo "sbt_diskcache=$HOME\\AppData\\Local\\sbt" >> "$GITHUB_OUTPUT"
+        elif [[ "$RUNNER_OS" == "macOS" ]]; then
+          echo "sbt_toolpath=$RUNNER_TOOL_CACHE/sbt/$SBT_RUNNER_VERSION" >> "$GITHUB_OUTPUT"
+          echo "sbt_downloadpath=$RUNNER_TEMP/_sbt" >> "$GITHUB_OUTPUT"
+          echo "sbt_diskcache=$HOME/Library/Caches/sbt" >> "$GITHUB_OUTPUT"
         else
           echo "sbt_toolpath=$RUNNER_TOOL_CACHE/sbt/$SBT_RUNNER_VERSION" >> "$GITHUB_OUTPUT"
           echo "sbt_downloadpath=$RUNNER_TEMP/_sbt" >> "$GITHUB_OUTPUT"
+          echo "sbt_diskcache=$HOME/.cache/sbt" >> "$GITHUB_OUTPUT"
         fi
         echo "sbt_cachekey=$RUNNER_OS-sbt-$SBT_RUNNER_VERSION-$SBT_CACHE_KEY_VERSION" >> "$GITHUB_OUTPUT"
+        echo "sbt_diskcachekey=$RUNNER_OS-sbt-diskcache-$SBT_CACHE_KEY_VERSION" >> "$GITHUB_OUTPUT"
     - name: Check Tool Cache
       id: cache-tool-dir
       shell: bash
@@ -86,6 +97,13 @@ runs:
       with:
         path: ${{ steps.cache-paths.outputs.sbt_toolpath }}
         key: ${{ steps.cache-paths.outputs.sbt_cachekey }}
+    - name: sbt 2.x disk cache
+      id: disk-cache
+      if: inputs.disk-cache == 'true'
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      with:
+        path: ${{ steps.cache-paths.outputs.sbt_diskcache }}
+        key: ${{ steps.cache-paths.outputs.sbt_diskcachekey }}
     - name: "Download and Install sbt"
       shell: bash
       env:
@@ -102,7 +120,7 @@ runs:
 
         cd "$SBT_DOWNLOADPATH"
         unzip -o "sbt-$SBT_RUNNER_VERSION.zip" -d "$SBT_TOOLPATH"
-   
+
     - name: "Verify the sbt distribution signature"
       id: "ampel-verify"
       # Skip on Windows/macOS until go-billy path fix lands: https://github.com/go-git/go-billy/issues/194
@@ -110,7 +128,7 @@ runs:
       env:
         SBT_RUNNER_VERSION: ${{ inputs.sbt-runner-version }}
         SBT_DOWNLOADPATH: "${{ steps.cache-paths.outputs.sbt_downloadpath }}"
-      uses: step-security/carabiner-dev-actions/ampel/verify@a4c7cda4c13b389e6747e7dfcaac9f599c7541db # v1.1.7
+      uses: step-security/carabiner-dev-actions/ampel/verify@0fd42d7efbb2b2c90458cc03add003600e3cd999 # v1.2.1
       with:
         policy: "git+https://github.com/carabiner-dev/policies#signature/signature.json"
         subject: "${{ steps.cache-paths.outputs.sbt_downloadpath }}/sbt-${{ inputs.sbt-runner-version }}.zip"
