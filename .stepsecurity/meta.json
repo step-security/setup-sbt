@@ -1,0 +1,18 @@
+{
+   "schema_version": "1",
+   "onboarding_type": "copied",
+   "archived": false,
+   "maintained_action_name": "step-security/setup-sbt",
+   "upstream_full_repo_name": "sbt/setup-sbt",
+   "action_type": "composite",
+   "last_release": {
+     "tag_name": "v1.1.22",
+     "created_at": "2026-04-27T13:19:13Z",
+     "published_at": "2026-04-28T03:44:01Z"
+   },
+   "sync": {
+     "ignore_presets": [
+       "defaults_v1"
+     ]
+   }
+ }
