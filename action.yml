@@ -4,7 +4,7 @@ inputs:
   sbt-runner-version:
     description: "The runner version (The actual version is controlled via project/build.properties)"
     required: true
-    default: 2.0.1
+    default: 2.0.6
   disk-cache:
     description: "Enable sbt 2.x disk cache"
     required: false
@@ -61,7 +61,7 @@ runs:
       shell: bash
       env:
         SBT_RUNNER_VERSION: ${{ inputs.sbt-runner-version }}
-        SBT_CACHE_KEY_VERSION: 1.1.25
+        SBT_CACHE_KEY_VERSION: 1.5.3
       run: |
         JDK_VERSION=0
         if [[ -x "$(command -v java)" ]]; then
@@ -83,9 +83,9 @@ runs:
           echo "sbt_diskcache=$HOME/.cache/sbt" >> "$GITHUB_OUTPUT"
           echo "sbt_monday=$(date -d "last Monday" +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
         fi
-        echo "sbt_cachekey=$RUNNER_OS-sbt-$SBT_RUNNER_VERSION-$SBT_CACHE_KEY_VERSION" >> "$GITHUB_OUTPUT"
-        echo "sbt_diskcachekey=$RUNNER_OS-java$JDK_VERSION-sbt-diskcache-$SBT_CACHE_KEY_VERSION" >> "$GITHUB_OUTPUT"
-    - name: Check Tool Cache
+        echo "sbt_cachekey=$RUNNER_OS-$RUNNER_ARCH-sbt-runner-$SBT_RUNNER_VERSION-$SBT_CACHE_KEY_VERSION" >> "$GITHUB_OUTPUT"
+        echo "sbt_diskcachekey=$RUNNER_OS-$RUNNER_ARCH-java$JDK_VERSION-sbt-diskcache-$SBT_CACHE_KEY_VERSION" >> "$GITHUB_OUTPUT"
+    - name: Check tool cache
       id: cache-tool-dir
       shell: bash
       env:
@@ -104,6 +104,18 @@ runs:
       with:
         path: ${{ steps.cache-paths.outputs.sbt_toolpath }}
         key: ${{ steps.cache-paths.outputs.sbt_cachekey }}
+    - name: Check runner cache
+      id: cache-tool-dir2
+      shell: bash
+      env:
+        SBT_TOOLPATH: "${{ steps.cache-paths.outputs.sbt_toolpath }}"
+      run: |
+        # actions/cache seems to be buggy on Windows, so double check if restore worked
+        if [[ -f "$SBT_TOOLPATH/sbt/bin/sbt" ]]; then
+          echo "cache-hit=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "cache-hit=false" >> "$GITHUB_OUTPUT"
+        fi
     - name: sbt 2.x disk cache
       id: disk-cache
       if: inputs.disk-cache == 'true'
@@ -118,21 +130,22 @@ runs:
         SBT_RUNNER_VERSION: ${{ inputs.sbt-runner-version }}
         SBT_TOOLPATH: "${{ steps.cache-paths.outputs.sbt_toolpath }}"
         SBT_DOWNLOADPATH: "${{ steps.cache-paths.outputs.sbt_downloadpath }}"
-      if: steps.cache-tool-dir.outputs.cache-hit != 'true' && steps.cache-dir.outputs.cache-hit != 'true'
+      if: steps.cache-tool-dir2.outputs.cache-hit != 'true'
       run: |
         mkdir -p "$SBT_DOWNLOADPATH"
         curl -sL "https://github.com/sbt/sbt/releases/download/v$SBT_RUNNER_VERSION/sbt-$SBT_RUNNER_VERSION.zip" > \
           "$SBT_DOWNLOADPATH/sbt-$SBT_RUNNER_VERSION.zip"
         curl -sL "https://github.com/sbt/sbt/releases/download/v$SBT_RUNNER_VERSION/sbt-$SBT_RUNNER_VERSION.zip.asc" > \
           "$SBT_DOWNLOADPATH/sbt-$SBT_RUNNER_VERSION.zip.asc"
-
         cd "$SBT_DOWNLOADPATH"
         unzip -o "sbt-$SBT_RUNNER_VERSION.zip" -d "$SBT_TOOLPATH"
-
+        if [[ ! -f "$SBT_TOOLPATH/sbt/bin/sbt" ]]; then
+          exit 1
+        fi
     - name: "Verify the sbt distribution signature"
       id: "ampel-verify"
       # Skip on Windows/macOS until go-billy path fix lands: https://github.com/go-git/go-billy/issues/194
-      if: runner.os == 'Linux' && steps.cache-tool-dir.outputs.cache-hit != 'true' && steps.cache-dir.outputs.cache-hit != 'true'
+      if: runner.os == 'Linux' && steps.cache-tool-dir2.outputs.cache-hit != 'true'
       uses: step-security/carabiner-dev-actions/ampel/verify@0fd42d7efbb2b2c90458cc03add003600e3cd999 # v1.2.1
       with:
         policy: "git+https://github.com/carabiner-dev/policies#signature/signature.json"
@@ -141,6 +154,7 @@ runs:
         signer: "key::rsassa-pkcs1v15::2EE0EA64E40A89B84B2DF73499E82A75642AC823"
         fail: false # Monitor only, don't fail the workflow yet.
         attest: false
+        results: none
         keydata: |
           -----BEGIN PGP PUBLIC KEY BLOCK-----
           Comment: Hostname:
