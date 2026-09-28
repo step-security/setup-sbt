@@ -4,7 +4,7 @@ inputs:
   sbt-runner-version:
     description: "The runner version (The actual version is controlled via project/build.properties)"
     required: true
-    default: 2.0.8
+    default: 2.0.9
   disk-cache:
     description: "Enable sbt 2.x disk cache"
     required: false
@@ -146,7 +146,7 @@ runs:
       id: "ampel-verify"
       # Skip on Windows/macOS until go-billy path fix lands: https://github.com/go-git/go-billy/issues/194
       if: runner.os == 'Linux' && steps.cache-tool-dir2.outputs.cache-hit != 'true'
-      uses: step-security/carabiner-dev-actions/ampel/verify@0fd42d7efbb2b2c90458cc03add003600e3cd999 # v1.2.1
+      uses: step-security/carabiner-dev-actions/ampel/verify@2314a25c71779d1c8eaf144881a5797f74da8910 # v1.2.9
       with:
         policy: "git+https://github.com/carabiner-dev/policies#signature/signature.json"
         subject: "${{ steps.cache-paths.outputs.sbt_downloadpath }}/sbt-${{ inputs.sbt-runner-version }}.zip"
