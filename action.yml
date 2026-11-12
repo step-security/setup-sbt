@@ -1,10 +1,11 @@
 name: "Setup sbt installer"
+author: step-security
 description: "Sets up sbt runner script"
 inputs:
   sbt-runner-version:
     description: "The runner version (The actual version is controlled via project/build.properties)"
     required: true
-    default: 2.0.9
+    default: 2.0.12
   disk-cache:
     description: "Enable sbt 2.x disk cache"
     required: false
@@ -148,7 +149,7 @@ runs:
       if: runner.os == 'Linux' && steps.cache-tool-dir2.outputs.cache-hit != 'true'
       uses: step-security/carabiner-dev-actions/ampel/verify@2314a25c71779d1c8eaf144881a5797f74da8910 # v1.2.9
       with:
-        policy: "git+https://github.com/carabiner-dev/policies#signature/signature.json"
+        policy: "git+https://github.com/carabiner-dev/policies@971d670e93f2fb4da304b0e5f071066dc4686a5a#signature/signature.json"
         subject: "${{ steps.cache-paths.outputs.sbt_downloadpath }}/sbt-${{ inputs.sbt-runner-version }}.zip"
         collector: "fs:${{ steps.cache-paths.outputs.sbt_downloadpath }}/" # Collect signatures from download path
         signer: "key::rsassa-pkcs1v15::2EE0EA64E40A89B84B2DF73499E82A75642AC823"
